@@ -13,36 +13,40 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware - Allow multiple origins
+// Middleware - CORS Configuration
 const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:5173',
+  'http://localhost:3000',
+  'https://frontend-management-uang.vercel.app',
   process.env.CLIENT_URL,
   process.env.VERCEL_URL
-].filter(Boolean); // Remove undefined values
+].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // Check if origin is in allowed list or matches wildcard patterns
+    // Check if origin is allowed
     const isAllowed = allowedOrigins.some(allowedOrigin => {
-      // Exact match
       if (origin === allowedOrigin) return true;
-      // Wildcard match for Vercel preview deployments
-      if (allowedOrigin && allowedOrigin.includes('vercel.app') && origin.includes('vercel.app')) return true;
+      // Allow all Vercel preview deployments
+      if (origin.endsWith('.vercel.app')) return true;
       return false;
     });
     
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log('Blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
+      console.log('CORS blocked origin:', origin);
+      // Don't throw error, just deny the request
+      callback(null, false);
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
